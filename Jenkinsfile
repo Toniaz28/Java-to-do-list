@@ -2,65 +2,45 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "toniaz28/java-todo-list"
-        IMAGE_TAG = "latest"
-    }
-
-    tools {
-        maven "Maven3"
+        DOCKER_IMAGE = "toniaz28/java-todo-list"
     }
 
     stages {
 
         stage('Checkout Code') {
             steps {
-                git branch: 'main',
-                    url: 'git@github.com:Toniaz28/Java-to-do-list.git'
-            }
-        }
-
-        stage('Build with Maven') {
-            steps {
-                sh 'mvn clean package'
-            }
-        }
-
-        stage('Run Tests') {
-            steps {
-                sh 'mvn test'
+                checkout scm
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t $IMAGE_NAME:$IMAGE_TAG ."
+                sh 'docker build -t $DOCKER_IMAGE .'
             }
         }
 
         stage('Login to DockerHub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
-                                                 usernameVariable: 'USERNAME',
-                                                 passwordVariable: 'PASSWORD')]) {
-                    sh "echo $PASSWORD | docker login -u $USERNAME --password-stdin"
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
                 }
             }
         }
 
-        stage('Push Image to DockerHub') {
+        stage('Push Image') {
             steps {
-                sh "docker push $IMAGE_NAME:$IMAGE_TAG"
+                sh 'docker push $DOCKER_IMAGE'
             }
         }
     }
 
     post {
         success {
-            echo 'Pipeline completed successfully 🚀'
+            echo "Pipeline succeeded 🚀"
         }
 
         failure {
-            echo 'Pipeline failed ❌ check logs'
+            echo "Pipeline failed ❌ check logs"
         }
     }
 }
