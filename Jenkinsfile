@@ -15,7 +15,7 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 git branch: 'main',
-                    url: 'git@github.com:Toniaz28/java-todo-list.git'
+                    url: 'git@github.com:Toniaz28/Java-to-do-list.git'
             }
         }
 
