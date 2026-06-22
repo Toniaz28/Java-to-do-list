@@ -2,38 +2,65 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "Toniaz28/java-todo-list"
-        DOCKER_TAG = "latest"
+        IMAGE_NAME = "toniaz28/java-todo-list"
+        IMAGE_TAG = "latest"
+    }
+
+    tools {
+        maven "Maven3"
     }
 
     stages {
 
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
-                git url: 'https://github.com/Toniaz28/java-todo-list.git', branch: 'main'
+                git branch: 'main',
+                    url: 'https://github.com/Toniaz28/java-todo-list.git'
+            }
+        }
+
+        stage('Build with Maven') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh 'mvn test'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t $DOCKER_IMAGE:$DOCKER_TAG ."
+                sh "docker build -t $IMAGE_NAME:$IMAGE_TAG ."
             }
         }
 
         stage('Login to DockerHub') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
-                                                 usernameVariable: 'USER',
-                                                 passwordVariable: 'PASS')]) {
-                    sh "echo $PASS | docker login -u $USER --password-stdin"
+                                                 usernameVariable: 'USERNAME',
+                                                 passwordVariable: 'PASSWORD')]) {
+                    sh "echo $PASSWORD | docker login -u $USERNAME --password-stdin"
                 }
             }
         }
 
-        stage('Push Image') {
+        stage('Push Image to DockerHub') {
             steps {
-                sh "docker push $DOCKER_IMAGE:$DOCKER_TAG"
+                sh "docker push $IMAGE_NAME:$IMAGE_TAG"
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully 🚀'
+        }
+
+        failure {
+            echo 'Pipeline failed ❌ check logs'
         }
     }
 }
